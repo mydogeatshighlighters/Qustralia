@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments</title>
+    <style>
+        /* Main Page Style */
+        body {
+            text-align: center;
+            color: #8083ff;
+            background-color: #f8ff80; /* Your yellow background */
+            font-family: 'Comic Sans MS', sans-serif; /* Optional: changed for a fun vibe */
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        /* Input Area */
+        .comment-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            color: #333;
+            box-shadow: 5px 5px 0px #8083ff; /* Retro shadow */
+            margin-bottom: 30px;
+        }
+
+        input, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 5px 0 15px; 
+            border: 2px solid #8083ff; 
+            border-radius: 8px; 
+            display: block; 
+            box-sizing: border-box;
+        }
+
+        button { 
+            background: #00e599; 
+            color: black; 
+            border: 2px solid black;
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            width: 100%;
+        }
+
+        /* The Comment Bubbles */
+        #list {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .comment { 
+            padding: 15px; 
+            margin-bottom: 15px;
+            border-radius: 20px;
+            border: 2px solid #000;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        }
+
+        /* Odd comments are Green */
+        .comment:nth-child(odd) {
+            background-color: #b3ffcc; /* Pastel Green */
+            color: #006633;
+        }
+
+        /* Even comments are Pink */
+        .comment:nth-child(even) {
+            background-color: #ffcce6; /* Pastel Pink */
+            color: #99004d;
+        }
+        
+        .comment b { 
+            display: block;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        /* Floating Icons */
+        .floating-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>comment or wtv.</h1>
+
+    <div class="comment-container">
+        <input id="user" placeholder="Your Name">
+        <textarea id="msg" placeholder="Write a comment..."></textarea>
+        <button onclick="send()">Post Comment</button>
+    </div>
+
+    <div id="list">Loading comments...</div>
+
+    <div class="floating-icon">
+        <a href="music.html" target="_blank" rel="noopener noreferrer">
+            <img src="music.gif" width="100px">
+        </a><br/>
+        <a href="index.html" target="_blank" rel="noopener noreferrer">
+            <img src="star.gif" width="100px">
+        </a>
+    </div>
+
+    <script>
+        async function load() {
+            try {
+                const res = await fetch('/.netlify/functions/comments');
+                const data = await res.json();
+                const listDiv = document.getElementById('list');
+                
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = "<p>No comments yet. Be the first!</p>";
+                    return;
+                }
+
+                listDiv.innerHTML = data.map(c => 
+                    `<div class="comment"><b>${c.username} says:</b>${c.content}</div>`
+                ).join('');
+            } catch (err) {
+                document.getElementById('list').innerHTML = "Error loading comments.";
+            }
+        }
+
+        async function send() {
+            const username = document.getElementById('user').value;
+            const content = document.getElementById('msg').value;
+
+            if(!username || !content) return alert("Fill everything in!");
+
+            await fetch('/.netlify/functions/comments', {
+                method: 'POST',
+                body: JSON.stringify({ username, content })
+            });
+
+            document.getElementById('msg').value = ''; 
+            load(); 
+        }
+
+        load(); 
+    </script>
+</body>
+</html>

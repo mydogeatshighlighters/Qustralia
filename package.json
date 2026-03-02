@@ -1,0 +1,9 @@
+{
+  "name": "my-comment-section",
+  "version": "1.0.0",
+  "description": "A simple comment section using Neon and Netlify",
+  "main": "index.js",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}
