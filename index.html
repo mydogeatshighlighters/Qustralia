@@ -47,6 +47,11 @@
             width: 100%;
         }
 
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
         /* The Comment Bubbles */
         #list {
             margin-top: 30px;
@@ -87,6 +92,16 @@
             right: 20px;
             z-index: 1000;
         }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #cc0000;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -96,21 +111,28 @@
     <div class="comment-container">
         <input id="user" placeholder="Your Name">
         <textarea id="msg" placeholder="Write a comment..."></textarea>
-        <button onclick="send()">Post Comment</button>
+        <button id="postBtn" onclick="send()">Post Comment</button>
     </div>
 
     <div id="list">Loading comments...</div>
 
     <div class="floating-icon">
         <a href="https://australiaisnotreal.netlify.app/music" target="_blank" rel="noopener noreferrer">
-            <img src="music.gif" width="100px">
+            <img src="music.gif" width="100px" alt="Music">
         </a><br/>
         <a href="https://australiaisnotreal.netlify.app" target="_blank" rel="noopener noreferrer">
-            <img src="star.gif" width="100px">
+            <img src="star.gif" width="100px" alt="Star">
         </a>
     </div>
 
     <script>
+        // Helper function to escape HTML and prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         async function load() {
             try {
                 const res = await fetch('/.netlify/functions/comments');
@@ -123,26 +145,50 @@
                 }
 
                 listDiv.innerHTML = data.map(c => 
-                    `<div class="comment"><b>${c.username} says:</b>${c.content}</div>`
+                    `<div class="comment"><b>${escapeHtml(c.username)} says:</b>${escapeHtml(c.content)}</div>`
                 ).join('');
             } catch (err) {
-                document.getElementById('list').innerHTML = "Error loading comments.";
+                document.getElementById('list').innerHTML = '<p class="error">Error loading comments.</p>';
             }
         }
 
         async function send() {
-            const username = document.getElementById('user').value;
-            const content = document.getElementById('msg').value;
+            const username = document.getElementById('user').value.trim();
+            const content = document.getElementById('msg').value.trim();
+            const postBtn = document.getElementById('postBtn');
 
-            if(!username || !content) return alert("Fill everything in!");
+            // Validation with trimmed values
+            if(!username || !content) {
+                alert("Fill everything in!");
+                return;
+            }
 
-            await fetch('/.netlify/functions/comments', {
-                method: 'POST',
-                body: JSON.stringify({ username, content })
-            });
+            // Disable button and show loading state
+            postBtn.disabled = true;
+            postBtn.textContent = "Posting...";
 
-            document.getElementById('msg').value = ''; 
-            load(); 
+            try {
+                const res = await fetch('/.netlify/functions/comments', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, content })
+                });
+
+                if (!res.ok) {
+                    alert("Failed to post comment. Try again!");
+                    return;
+                }
+
+                // Clear input fields on success
+                document.getElementById('user').value = ''; 
+                document.getElementById('msg').value = ''; 
+                load();
+            } catch (err) {
+                alert("Error posting comment. Please try again.");
+            } finally {
+                // Re-enable button
+                postBtn.disabled = false;
+                postBtn.textContent = "Post Comment";
+            }
         }
 
         load(); 
